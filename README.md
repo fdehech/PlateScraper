@@ -6,7 +6,6 @@ A Python web scraper built with Selenium WebDriver (Edge) to extract data from v
 
 - 🌐 **Selenium WebDriver** with Edge browser
 - 🔐 **Interactive CLI Menu**: Choose between TUN or RS plates before starting.
-- 📊 **Multiple Export Formats**: CSV, JSON, Excel.
 - 📝 **Comprehensive Logging**: Console and file-based logs.
 - 🛡️ **Anti-detection**: User agents and automation flags.
 - 🔄 **Automatic WebDriver Management**: Uses local driver or downloads if needed.
@@ -54,14 +53,12 @@ Edit `.env` file to customize:
 
 ```
 PlateScraper/
-├── .env                 # Environment variables
-├── .env.example         # Example environment file
+├── .env                # Environment variables
 ├── .gitignore          # Git ignore rules
 ├── requirements.txt    # Python dependencies
 ├── scraper.py          # Main scraper script
 ├── README.md           # This file
-├── scraper.log         # Log file
-└── output/             # Scraped data output
+└── scraper.log         # Log file
 ```
 
 ## License
