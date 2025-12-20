@@ -203,17 +203,29 @@ class VidangeScraper:
                 EC.presence_of_element_located((By.CLASS_NAME, "value"))
             )
             
-            # Extract car details
+            # Define the specific fields we want to extract
+            required_fields = [
+                'Marque et modèle', 
+                'Carburant', 
+                'Mise en circulation', 
+                'Puissance Fiscale', 
+                'Type', 
+                'Moteur', 
+                'Carosserie', 
+                'Cylindrée'
+            ]
+            
+            # Initialize the result dictionary with metadata
             car_details = {
                 'timestamp': datetime.now().isoformat(),
                 'serie_searched': self.serie,
-                'num_searched': self.num,
-                'url': self.driver.current_url
+                'num_searched': self.num
             }
             
             # Find all info blocks (divs containing title and value)
             info_elements = self.driver.find_elements(By.XPATH, "//div[div[@class='title'] and div[@class='value']]")
             
+            extracted_data = {}
             if not info_elements:
                 # Fallback: try finding titles and values separately
                 titles = self.driver.find_elements(By.CLASS_NAME, "title")
@@ -223,22 +235,27 @@ class VidangeScraper:
                     key = t.text.strip()
                     val = v.text.strip()
                     if key:
-                        car_details[key] = val
+                        extracted_data[key] = val
             else:
                 for element in info_elements:
                     try:
                         title = element.find_element(By.CLASS_NAME, "title").text.strip()
                         value = element.find_element(By.CLASS_NAME, "value").text.strip()
                         if title:
-                            car_details[title] = value
+                            extracted_data[title] = value
                     except Exception as e:
                         logger.warning(f"Could not extract a specific info block: {e}")
             
-            if len(car_details) > 4:  # More than just the initial 4 fields
+            # Map extracted data to our required fields, using '-' as default
+            for field in required_fields:
+                car_details[field] = extracted_data.get(field, '-')
+            
+            # Only add to data if we found at least some of the required fields
+            if any(extracted_data.get(f) for f in required_fields):
                 self.data.append(car_details)
-                logger.info(f"Successfully scraped car details: {car_details.get('Marque et modèle', 'Unknown')}")
+                logger.info(f"Successfully scraped car details for: {car_details.get('Marque et modèle')}")
             else:
-                logger.warning("No car details found on the page.")
+                logger.warning("No relevant car details found on the page.")
             
             logger.info(f"Scraped {len(self.data)} items")
             
