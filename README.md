@@ -1,4 +1,4 @@
-# Vidange.tn Web Scraper
+# Web Scraper
 
 A Python web scraper built with Selenium WebDriver (Edge) to extract data from vidange.tn.
 
