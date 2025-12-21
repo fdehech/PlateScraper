@@ -44,7 +44,7 @@ The scraper will present a menu:
 ## Configuration Options
 
 Edit `.env` file to customize:
-- `TARGET_URL`: The website to scrape (default: https://vidange.tn)
+- `TARGET_URL`: The website to scrape (default: https://vidange*tn)
 - `HEADLESS`: Run browser in headless mode (True/False)
 - `IMPLICIT_WAIT`: Seconds to wait for elements (default: 10)
 - `OUTPUT_DIR`: Directory to save scraped data (default: output)
