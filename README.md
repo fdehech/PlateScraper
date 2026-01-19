@@ -31,23 +31,50 @@ A Python web scraper built with Selenium WebDriver (Edge) to extract data from v
 
 ## Usage
 
-Run the scraper:
+### Run as FastAPI (Recommended)
+1. **Start the server**:
+   ```bash
+   python main.py
+   ```
+   The API will be available at `http://localhost:8000`.
+
+2. **Scrape via API**:
+   - **TUN Plate**: `http://localhost:8000/scrape/tun/{serie}/{num}`
+     ```bash
+     curl "http://localhost:8000/scrape/tun/153/3601"
+     ```
+   - **RS Plate**: `http://localhost:8000/scrape/rs/{num_rs}`
+     ```bash
+     curl "http://localhost:8000/scrape/rs/12345"
+     ```
+
+### Run as Script
+You can still run the scraper directly for a quick test:
 ```bash
 python scraper.py
 ```
 
-The scraper will present a menu:
-1. Choose **TUN** (Standard) or **RS** (Régime Suspensif).
-2. Enter the plate details (Serie/Number for TUN, or RS Number for RS).
-3. The browser will start and extract the car details.
-
 ## Configuration Options
 
 Edit `.env` file to customize:
-- `TARGET_URL`: The website to scrape (default: https://vidange*tn)
+- `TARGET_URL`: The website to scrape (default: https://vidange.tn)
 - `HEADLESS`: Run browser in headless mode (True/False)
+- `BROWSER_TYPE`: `chrome` or `edge` (default: `edge`)
 - `IMPLICIT_WAIT`: Seconds to wait for elements (default: 10)
 - `OUTPUT_DIR`: Directory to save scraped data (default: output)
+
+## Cross-Platform Support (Linux/Ubuntu)
+
+The scraper now supports both **Chrome** and **Edge** and uses `webdriver-manager` to automatically download the correct drivers.
+
+### Setup on Ubuntu VM:
+1. **Install Chrome**:
+   ```bash
+   wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+   sudo apt install ./google-chrome-stable_current_amd64.deb
+   ```
+2. **Configure `.env`**:
+   Set `BROWSER_TYPE=chrome` and `HEADLESS=True` in your `.env` file.
 
 ## Project Structure
 

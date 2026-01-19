@@ -11,13 +11,17 @@ from datetime import datetime
 from typing import List, Dict, Optional
 
 from selenium import webdriver
-from selenium.webdriver.edge.service import Service
-from selenium.webdriver.edge.options import Options
+from selenium.webdriver.edge.service import Service as EdgeService
+from selenium.webdriver.edge.options import Options as EdgeOptions
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from dotenv import load_dotenv
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
+from webdriver_manager.chrome import ChromeDriverManager
 
 
 # Configure logging
@@ -46,6 +50,7 @@ class VidangeScraper:
         self.num_rs = num_rs
         
         self.headless = os.getenv('HEADLESS', 'False').lower() == 'true'
+        self.browser_type = os.getenv('BROWSER_TYPE', 'edge').lower()
         self.implicit_wait = int(os.getenv('IMPLICIT_WAIT', 10))
         self.output_dir = Path(os.getenv('OUTPUT_DIR', 'output'))
         self.output_dir.mkdir(exist_ok=True)
@@ -55,36 +60,40 @@ class VidangeScraper:
         
         logger.info(f"Scraper initialized for {self.plate_type} plate")
     
-    def setup_driver(self) -> webdriver.Edge:
-        """Setup and configure Edge WebDriver"""
-        logger.info("Setting up Edge WebDriver...")
+    def setup_driver(self) -> webdriver.Remote:
+        """Setup and configure WebDriver (Edge or Chrome)"""
+        logger.info(f"Setting up {self.browser_type.capitalize()} WebDriver...")
         
-        edge_options = Options()
-        if self.headless:
-            edge_options.add_argument('--headless')
-        
-        edge_options.add_argument('--disable-gpu')
-        edge_options.add_argument('--no-sandbox')
-        edge_options.add_argument('--disable-dev-shm-usage')
-        edge_options.add_argument('--disable-blink-features=AutomationControlled')
-        edge_options.add_experimental_option('excludeSwitches', ['enable-logging'])
-        edge_options.add_experimental_option('useAutomationExtension', False)
-        
-        edge_options.add_argument(
-            'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-            'AppleWebKit/537.36 (KHTML, like Gecko) '
-            'Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0'
-        )
-        
-        driver_path = Path(__file__).parent / 'msedgedriver.exe'
-        if not driver_path.exists():
-            raise FileNotFoundError(f"msedgedriver.exe not found at {driver_path}")
+        if self.browser_type == 'chrome':
+            chrome_options = ChromeOptions()
+            if self.headless:
+                chrome_options.add_argument('--headless=new')
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+            chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
             
-        service = Service(executable_path=str(driver_path))
-        driver = webdriver.Edge(service=service, options=edge_options)
+            driver_path = ChromeDriverManager().install()
+            service = ChromeService(executable_path=driver_path)
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+        else:
+            edge_options = EdgeOptions()
+            if self.headless:
+                edge_options.add_argument('--headless')
+            edge_options.add_argument('--disable-gpu')
+            edge_options.add_argument('--no-sandbox')
+            edge_options.add_argument('--disable-dev-shm-usage')
+            edge_options.add_argument('--disable-blink-features=AutomationControlled')
+            edge_options.add_experimental_option('excludeSwitches', ['enable-logging'])
+            edge_options.add_experimental_option('useAutomationExtension', False)
+            
+            driver_path = EdgeChromiumDriverManager().install()
+            service = EdgeService(executable_path=driver_path)
+            driver = webdriver.Edge(service=service, options=edge_options)
+
         driver.implicitly_wait(self.implicit_wait)
         driver.maximize_window()
-        
         return driver
     
     def fill_search_form(self):
@@ -186,44 +195,21 @@ class VidangeScraper:
             
         logger.info(f"Data saved to: {filepath}")
     
-    def run(self):
-        """Main execution method"""
+    def run(self) -> List[Dict]:
+        """Main execution method, returns scraped data"""
         try:
             self.driver = self.setup_driver()
             self.driver.get(self.target_url)
             self.scrape_data()
-            self.save_data()
+            # self.save_data() # Optional: keep saving if desired, but return data
+            return self.data
         finally:
             if self.driver:
                 self.driver.quit()
 
 
-def main():
-    """Main entry point with CLI menu"""
-    print("\n" + "="*50)
-    print("      VIDANGE.TN PLATE SCRAPER")
-    print("="*50)
-    
-    print("\nChoose Plate Type:")
-    print("1. TUN (Standard)")
-    print("2. RS (Régime Suspensif)")
-    
-    choice = input("\nEnter choice (1 or 2): ").strip()
-    
-    plate_type, serie, num, num_rs = 'TUN', '', '', ''
-    
-    if choice == '2':
-        plate_type = 'RS'
-        num_rs = input("Enter RS Number: ").strip()
-        if not num_rs: return
-    else:
-        serie = input("Enter Serie (e.g., 153): ").strip()
-        num = input("Enter Number (e.g., 3601): ").strip()
-        if not serie or not num: return
-
-    scraper = VidangeScraper(plate_type, serie, num, num_rs)
-    scraper.run()
-
-
 if __name__ == "__main__":
-    main()
+    # Example usage
+    scraper = VidangeScraper(plate_type='TUN', serie='153', num='3601')
+    results = scraper.run()
+    print(json.dumps(results, indent=4, ensure_ascii=False))
